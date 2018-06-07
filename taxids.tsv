@@ -15,11 +15,9 @@ Aspe_fumi_A1163	aspeFumi_A1163	451804
 Aspe_fumi_Af293	aspeFumi_AF293	330879
 Aspe_kawa_IFO_4308_IFO4308	aspeKawa_IFO_4308_IFO4308	1033177
 Aspe_nidu_FGSC_A4	aspeNidu_FGSC_A4	227321
-Aspe_nidu_FGSC_A4_1	aspeNidu_FGSC_A4_1	227321
 Aspe_nige_CBS_513_88	aspeNige_CBS_513_88	425011
 Aspe_nige_SH_2	aspeNige_SH_2	1316740
 Aspe_oryz_RIB40	aspeOryz_RIB40	510516
-Aspe_oryz_RIB40_1	aspeOryz_RIB40_1	510516
 Aspe_rube_CBS_135680	aspeRube_CBS_135680	1388766
 Aspe_soja_NBRC_4239	aspeSoja_NBRC_4239	927772
 Aspe_terr_NIH2624	aspeTerr_NIH2624	341663
@@ -41,10 +39,8 @@ Blum_gram_f_tritici_96224	blumGram_F_SP_TRITICI_96224	1268274
 Blum_gram_f_tritici_JIW2	blumGram_F_SP_TRITICI_JIW2	1306134
 Botr_botr_FD_172_SS1	botrBotr_FD_172_SS1	930990
 Botr_cine_B05_10	botrCine_B05_10	332648
-Botr_cine_B05_10_1	botrCine_B05_10_1	332648
 Botr_cine_BcDW1	botrCine_BCDW1	1290391
 Botr_cine_T4	botrCine_T4	999810
-Botr_cine_T4_1	botrCine_T4_1	999810
 Cand_albi_3153A	candAlbi_3153A	1182531
 Cand_albi_A123	candAlbi_A123	1182537
 Cand_albi_A155	candAlbi_A155	1182538
@@ -175,7 +171,6 @@ Glar_lozo_74030	glarLozo_74030	1104152
 Glar_lozo_ATCC_20868	glarLozo_ATCC20868	1116229
 Gloe_trab_ATCC_11539	gloeTrab_ATCC11539	670483
 Gros_clav_kw1407	grosClav_KW1407	655863
-Gros_clav_kw1407_1	grosClav_KW1407_1	655863
 Gyal_flav_KoLRI002931	gyalFlav_KOLRI002931	1353255
 Gymn_luxu_FD_317_M1	gymnLuxu_FD_317_M1	944289
 Hirs_minn_3608	hirsMinn_3608	1043627
@@ -332,7 +327,6 @@ Sacc_cere_PW5	saccCere_PW5	947039
 Sacc_cere_R008	saccCere_R008	1182966
 Sacc_cere_R103	saccCere_R103	1182967
 Sacc_cere_RM11_1a	saccCere_RM11_1A	285006
-Sacc_cere_S288c	saccCere_S288C	559292
 Sacc_cere_Sigma1278b	saccCere_SIGMA1278B	658763
 Sacc_cere_T7	saccCere_T7	929585
 Sacc_cere_T73	saccCere_T73	471859
@@ -345,20 +339,16 @@ Sacc_cere_Y10	saccCere_Y10	462210
 Sacc_cere_YJM269	saccCere_YJM269	929586
 Sacc_cere_YJSH1	saccCere_YJSH1	1087981
 Sacc_kudr_FM1056	saccKudr_FM1056	1163633
-Sacc_kudr_FM1057	saccKudr_FM1057	1163634
 Sacc_kudr_FM1062	saccKudr_FM1062	1163641
-Sacc_kudr_FM1066	saccKudr_FM1066	1163645
 Sacc_kudr_FM1069	saccKudr_FM1069	1163632
 Sacc_kudr_FM1071	saccKudr_FM1071	1165457
 Sacc_kudr_FM1072	saccKudr_FM1072	1163638
 Sacc_kudr_FM1073	saccKudr_FM1073	1163639
 Sacc_kudr_FM1074	saccKudr_FM1074	1163640
-Sacc_kudr_FM1075	saccKudr_FM1075	1163642
 Sacc_kudr_FM1076	saccKudr_FM1076	1163643
 Sacc_kudr_FM1077	saccKudr_FM1077	1163644
 Sacc_kudr_FM1078	saccKudr_FM1078	1163636
 Sacc_kudr_FM1079	saccKudr_FM1079	1163637
-Sacc_kudr_FM1094	saccKudr_FM1094	1165458
 Sacc_kudr_IFO10990	saccKudr_IFO10990	1163646
 Sacc_kudr_IFO10991	saccKudr_IFO10991	1163647
 Sacc_kudr_IFO1803	saccKudr_IFO1803	1163648
@@ -429,7 +419,6 @@ Vavr_culi_floridensis	vavrCuli_FLORIDENSIS	948595
 Verr_gall_CBS_43764	verrGall_CBS_43764	253628
 Vert_alfa_VaMs_102	vertAlfa_VAMS_102	526221
 Vert_dahl_JR2	vertDahl_JR2	1202531
-Vert_dahl_VdLs_17	vertDahl_VDLS_17	498257
 Vert_dahl_VdLs_17_1	vertDahl_VDLS_17_1	498257
 Vitt_corn_ATCC_50505	vittCorn_ATCC50505	993615
 Volv_volv_V23	volvVolv_V23	706473

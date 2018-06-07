@@ -1,10 +1,11 @@
+#!/usr/bin/env Rscript
 library(taxize)
 library(stringr)
 library(plyr)
 library(dplyr)
 library(tidyr)
 
-genome_table = read.delim('fungi-genomes-060118.tsv', col.names = c('dirname', 'dbname', 'taxid'), stringsAsFactors = FALSE) %>%
+genome_table = read.delim('taxids.tsv', col.names = c('dirname', 'dbname', 'taxid'), stringsAsFactors = FALSE) %>%
   mutate(taxid = as.character(taxid))
 fungi_taxids = genome_table$taxid %>% unlist %>% unname %>% unique
 
