@@ -50,7 +50,13 @@ def main():
 
   message('Exporting results to {}...'.format(output_file))
   trnas = trnas[sorted(list(trnas.columns), key = get_position_order)]
-  trnas.to_csv(path_or_buf = output_file, sep = '\t', index_label = 'seqname')
+  if not output_insertion_columns:
+    insertion_cols = list(filter(lambda x: bool(re.search('^\d+i', x)), trnas.columns))
+    trnas.drop(columns = insertion_cols, inplace = True)
+    trnas.drop(columns = insertion_cols, inplace = True)
+    trnas.to_csv(path_or_buf = output_file, sep = '\t', header = False, index_label = 'seqname')
+  else:
+    trnas.to_csv(path_or_buf = output_file, sep = '\t', index_label = 'seqname')
   message('done\n')
 
 
@@ -212,7 +218,7 @@ def annotate_trnas(trnas):
   message('done\n')
 
   message('\tAdding tertiary interaction columns...')
-  for tertiary_interaction in ['8:14:21', '8:14', '9:12:23', '9:23', '10:25:45', '10:45', '13:22:46', '22:46', '15:48', '18:55', '19:56', '26:44', '54:58']:
+  for tertiary_interaction in ['8:14', '9:23', '10:45', '22:46', '15:48', '18:55', '19:56', '26:44', '54:58']:
     bases = tertiary_interaction.split(':')
     trnas[tertiary_interaction] = trnas.loc[:, bases].apply(lambda row: ':'.join(row), axis = 1)
   message('done\n')
@@ -292,6 +298,7 @@ def parse_args():
   parser.add_argument('-a', '--alignment_file', default = 'tRNAs-{}.sto'.format(timestamp), help = '')
   parser.add_argument('-f', '--tRNA_fasta', default = 'tRNAs-{}.fa'.format(timestamp), help = '')
   parser.add_argument('-c', '--clean', default = False, action = 'store_true', help = 'Attempt to automatically clean up intermediate files')
+  parser.add_argument('-i', '--output_insertion_columns', default = False, action = 'store_true', help = 'Include columns for introns and insertions')
   return parser.parse_args()
 
 
@@ -303,6 +310,7 @@ if __name__ == '__main__':
   alignment_file = args.alignment_file
   numbering_model = args.numbering_model
   output_file = args.output_file
+  output_insertion_columns = args.output_insertion_columns
   main()
   if args.clean:
     os.remove(alignment_file)
