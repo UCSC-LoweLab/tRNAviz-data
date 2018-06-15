@@ -53,18 +53,14 @@ def main():
   if not output_insertion_columns:
     insertion_cols = list(filter(lambda x: bool(re.search('^\d+i', x)), trnas.columns))
     trnas.drop(columns = insertion_cols, inplace = True)
-    trnas.drop(columns = insertion_cols, inplace = True)
-    trnas.to_csv(path_or_buf = output_file, sep = '\t', header = False, index_label = 'seqname')
-  else:
-    trnas.to_csv(path_or_buf = output_file, sep = '\t', index_label = 'seqname')
+
+  trnas.to_csv(path_or_buf = output_file, sep = '\t', index_label = 'seqname')
   message('done\n')
 
 
 def read_genomes_table(path):
   '''Read genomes table, then add and validate paths to tRNAscan-SE output to genomes data frame'''
-  genomes_df = pd.read_table(path, header = None, index_col = False,
-    names = ['dbname', 'dirname', 'taxid', 'assembly', 'varietas', 'species', 'genus', 'subclass', 'class', 'suborder', 'order', 'subphylum', 'phylum', 'subkingdom', 'kingdom'],
-    dtype = {'taxid': str})
+  genomes_df = pd.read_table(path, index_col = False, dtype = {'taxid': str})
 
   genomes_df['iso_file'] = genomes_df.dbname.apply(lambda dbname: 'data/iso/{}-tRNAs.iso'.format(dbname))
   genomes_df['ss_file'] = genomes_df.dbname.apply(lambda dbname: 'data/ss/{}-tRNAs.ss'.format(dbname))
@@ -236,22 +232,22 @@ def annotate_trnas(trnas):
   message('\tCalculating loop lengths\n')
   message('\t\tCalculating D-loop lengths...')
   dloop_cols = list(filter(lambda col: ':' not in col, bounds_to_cols(trnas.columns, 14, 21)))
-  trnas['D-loop'] = trnas[dloop_cols].apply(lambda x: len(x[(x != '.') & (x != '-')]), axis = 1)
+  trnas['dloop'] = trnas[dloop_cols].apply(lambda x: len(x[(x != '.') & (x != '-')]), axis = 1)
   # Leu, Ser have a 3 bp D stem
   dloop_II_cols = list(filter(lambda col: ':' not in col, bounds_to_cols(trnas.columns, 13, 22)))
-  trnas.loc[(trnas.isotype == 'Leu') | (trnas.isotype == 'Ser'), 'D-loop'] = trnas[dloop_II_cols].apply(lambda x: len(x[(x != '.') & (x != '-')]), axis = 1)
+  trnas.loc[(trnas.isotype == 'Leu') | (trnas.isotype == 'Ser'), 'dloop'] = trnas[dloop_II_cols].apply(lambda x: len(x[(x != '.') & (x != '-')]), axis = 1)
   message('done\n')
   message('\t\tCalculating anticodon loop lengths...')
   acloop_cols = list(filter(lambda x: not re.match('37i.+', x), bounds_to_cols(trnas.columns, 32, 38)))
-  trnas['AC-loop'] = trnas[acloop_cols].apply(lambda x: len(x[(x != '.') & (x != '-')]), axis = 1)
+  trnas['acloop'] = trnas[acloop_cols].apply(lambda x: len(x[(x != '.') & (x != '-')]), axis = 1)
   message('done\n')
   message(u'\t\tCalculating TψC loop lengths...')
   tpcloop_cols = bounds_to_cols(trnas.columns, 54, 60)
-  trnas['TPC-loop'] = trnas[tpcloop_cols].apply(lambda x: len(x[(x != '.') & (x != '-')]), axis = 1)
+  trnas['tpcloop'] = trnas[tpcloop_cols].apply(lambda x: len(x[(x != '.') & (x != '-')]), axis = 1)
   message('done\n')
   message(u'\t\tCalculating variable arm lengths...')
   varm_cols = list(filter(lambda x: ('V' in x) & (':' not in x) | (x in bounds_to_cols(trnas.columns, 45, 48)), trnas.columns))
-  trnas['V-arm'] = trnas[varm_cols].apply(lambda x: len(x[(x != '.') & (x != '-')]), axis = 1)
+  trnas['varm'] = trnas[varm_cols].apply(lambda x: len(x[(x != '.') & (x != '-')]), axis = 1)
   message('done\n')
 
   message('\tMarking duplicates...')
@@ -274,7 +270,7 @@ def bounds_to_cols(cols, start, end):
 
 def get_position_order(position):
   '''Helper function for returning a value for sorting position-based columns, especially with variable insertions'''
-  metadata_cols = ['isotype', 'anticodon', 'score', 'primary', 'best_model', 'isoscore', 'isoscore_ac', 'dbname', 'assembly', 'varietas', 'species', 'genus', 'subclass', 'class', 'suborder', 'order', 'subphylum', 'phylum', 'subkingdom', 'kingdom', 'taxid', 'stemGC', 'insertions', 'deletions', 'D-loop', 'AC-loop', 'TPC-loop', 'V-arm', 'intron_length']
+  metadata_cols = ['isotype', 'anticodon', 'score', 'primary', 'best_model', 'isoscore', 'isoscore_ac', 'dbname', 'assembly', 'varietas', 'species', 'genus', 'subclass', 'class', 'suborder', 'order', 'subphylum', 'phylum', 'subkingdom', 'kingdom', 'domain', 'taxid', 'stemGC', 'insertions', 'deletions', 'D-loop', 'AC-loop', 'TPC-loop', 'V-arm', 'intron_length']
   if position in metadata_cols:
     return metadata_cols.index(position) - 50
   if position == "20a": return 20.1

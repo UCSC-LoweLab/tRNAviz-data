@@ -1,3 +1,4 @@
+dbname	dirname	taxid	assembly	varietas	species	genus	family	order	subclass	class	subphylum	phylum	subkingdom	kingdom	domain
 agarBisp_VAR_BISPORUS_H97	Agar_bisp_var_bisporus_H97	936046	Agaricus bisporus var. bisporus H97	Agaricus bisporus var. bisporus	Agaricus bisporus	Agaricus	Agaricaceae	Agaricales	Agaricomycetidae	Agaricomycetes	Agaricomycotina	Basidiomycota	Dikarya	Fungi	Eukaryota
 agarBisp_VAR_BURNETTII_JB137_S	Agar_bisp_var_burnettii_JB137_S8_JB137_s8	597362	Agaricus bisporus var. burnettii JB137-S8	Agaricus bisporus var. burnettii	Agaricus bisporus	Agaricus	Agaricaceae	Agaricales	Agaricomycetidae	Agaricomycetes	Agaricomycotina	Basidiomycota	Dikarya	Fungi	Eukaryota
 alloMacr_ATCC38327	Allo_macr_ATCC_38327	578462	Allomyces macrogynus ATCC 38327		Allomyces macrogynus	Allomyces	Blastocladiaceae	Blastocladiales		Blastocladiomycetes		Blastocladiomycota		Fungi	Eukaryota
