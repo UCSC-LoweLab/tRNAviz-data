@@ -31,3 +31,4 @@ genome_table = genome_table %>% left_join(taxonomy, by = 'taxid') %>%
   select(dbname, dirname, taxid, assembly, varietas, species, genus, family, order, subclass, class, subphylum, phylum, subkingdom, kingdom, domain)
 
 write.table(genome_table, file = 'genomes.tsv', quote = FALSE, sep = '\t', row.names = FALSE)
+write.table(genome_table %>% gather(rank, classif, -assembly, -taxid), file = 'taxonomy.tsv', quote = FALSE, sep = '\t', row.names = FALSE)
