@@ -270,7 +270,7 @@ def bounds_to_cols(cols, start, end):
 
 def get_position_order(position):
   '''Helper function for returning a value for sorting position-based columns, especially with variable insertions'''
-  metadata_cols = ['isotype', 'anticodon', 'score', 'primary', 'best_model', 'isoscore', 'isoscore_ac', 'dbname', 'assembly', 'varietas', 'species', 'genus', 'subclass', 'class', 'suborder', 'order', 'subphylum', 'phylum', 'subkingdom', 'kingdom', 'domain', 'taxid', 'stemGC', 'insertions', 'deletions', 'D-loop', 'AC-loop', 'TPC-loop', 'V-arm', 'intron_length']
+  metadata_cols = ['isotype', 'anticodon', 'score', 'primary', 'best_model', 'isoscore', 'isoscore_ac', 'dbname', 'assembly', 'varietas', 'species', 'genus', 'family', 'order', 'subclass', 'class', 'subphylum', 'phylum', 'subkingdom', 'kingdom', 'domain', 'taxid', 'stemGC', 'insertions', 'deletions', 'D-loop', 'AC-loop', 'TPC-loop', 'V-arm', 'intron_length']
   if position in metadata_cols:
     return metadata_cols.index(position) - 50
   if position == "20a": return 20.1
