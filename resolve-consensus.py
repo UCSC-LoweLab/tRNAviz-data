@@ -51,23 +51,24 @@ def main():
   trnas = trnas[trnas.primary]
 
 
-  message('Parsing taxonomic ranks...')
-  classifs = OrderedDict()
-  for taxclass in ['genus', 'family', 'order', 'subclass', 'class', 'subphylum', 'phylum', 'subkingdom', 'kingdom', 'domain']:
-    for classif in trnas[taxclass].unique():
-      classifs[classif] = taxclass
+  message('Parsing clades and taxonomic ranks...')
+  ranks = OrderedDict() # Dictionary that returns taxonomic rank given a clade
+  for rank in ['genus', 'family', 'order', 'subclass', 'class', 'subphylum', 'phylum', 'subkingdom', 'kingdom', 'domain']:
+    for clade in trnas[rank].unique():
+      ranks[clade] = rank
   message('done\n')
 
 
-  message('Calculating consensus features for {} taxonomic classifications...\n'.format(len(classifs)))
+  message('Calculating consensus features for {} clades...\n'.format(len(ranks)))
   consensus = pd.DataFrame()
-  for classif in classifs:
-    message('\tResolving consensus for {} {}...'.format(classifs[classif], classif))
-    current_taxclass_trnas = trnas[trnas[classifs[classif]] == classif]
-    current_taxclass_consensus = resolve_consensus_isotypes(current_taxclass_trnas)
-    current_taxclass_consensus['classif'] = classif
-    current_taxclass_consensus['rank'] = classifs[classif]
-    consensus = consensus.append(current_taxclass_consensus)
+  for clade in ranks.keys():
+    message('\tResolving consensus for {} {}...'.format(ranks[clade], clade))
+    current_rank = ranks[clade]
+    current_clade_trnas = trnas[trnas[current_rank] == clade]
+    current_clade_consensus = resolve_consensus_isotypes(current_clade_trnas)
+    current_clade_consensus['clade'] = clade
+    current_clade_consensus['rank'] = ranks[clade]
+    consensus = consensus.append(current_clade_consensus)
     message('done\n')
   message('Done\n')
   
