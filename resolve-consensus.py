@@ -73,7 +73,9 @@ def main():
   message('Done\n')
   
   message('Exporting results to {}...'.format(output_file))
-  consensus.to_csv(path_or_buf = output_file, sep = '\t', index = False)
+  consensus = consensus.set_index(['isotype', 'clade', 'rank', 'position']).unstack('position')
+  consensus.columns = consensus.columns.get_level_values(1)
+  consensus.to_csv(path_or_buf = output_file, sep = '\t')
   message('done\n')
 
 
