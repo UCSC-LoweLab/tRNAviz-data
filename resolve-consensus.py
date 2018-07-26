@@ -55,6 +55,8 @@ def main():
   ranks = OrderedDict() # Dictionary that returns taxonomic rank given a clade
   for rank in ['genus', 'family', 'order', 'subclass', 'class', 'subphylum', 'phylum', 'subkingdom', 'kingdom', 'domain']:
     for clade in trnas[rank].unique():
+      if pd.isnull(clade):
+        continue
       ranks[clade] = rank
   message('done\n')
 
@@ -68,7 +70,7 @@ def main():
     current_clade_consensus = resolve_consensus_isotypes(current_clade_trnas)
     current_clade_consensus['clade'] = clade
     current_clade_consensus['rank'] = ranks[clade]
-    consensus = consensus.append(current_clade_consensus)
+    consensus = consensus.append(current_clade_consensus, sort = True)
     message('done\n')
   message('Done\n')
   
@@ -86,7 +88,7 @@ def resolve_consensus_isotypes(trnas):
   for isotype in isotypes:
     current_isotype_consensus = resolve_consensus(trnas.loc[trnas.isotype == isotype])
     current_isotype_consensus['isotype'] = isotype
-    consensus = consensus.append(current_isotype_consensus)
+    consensus = consensus.append(current_isotype_consensus, sort = True)
   return(consensus)
 
 def resolve_consensus(trnas):
@@ -111,12 +113,8 @@ def resolve_consensus(trnas):
       if species_check and freq_check:
         current_position['consensus'] = candidate
         break
-    if 'consensus' not in current_position:
-      if ':' in positions[position]:
-        current_position['consensus'] = 'NN'
-      else:
-        current_position['consensus'] = 'N'
-    consensus.append(current_position)
+    if 'consensus' in current_position:
+      consensus.append(current_position)
   return pd.DataFrame(consensus)
 
 def get_candidate_features(features, combos):
