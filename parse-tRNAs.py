@@ -95,7 +95,7 @@ def process_tscan_output(genomes_df):
       ).itertuples()
     for metadata in tscanout_handle:
       if 'pseudo' in metadata.note: continue
-      seqname = '{}.trna{}-{}{}'.format(metadata.seqname, metadata.trna_number, metadata.isotype, metadata.ac)
+      seqname = '{}.trna{}-{}{}'.format(metadata.seqname.strip(), metadata.trna_number, metadata.isotype.strip(), metadata.ac.strip())
       approved_tRNAs.append(seqname)
       intron_length = abs(metadata.intron_start - metadata.intron_end)
       if intron_length > 0: intron_length = intron_length + 1
