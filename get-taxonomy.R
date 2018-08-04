@@ -42,6 +42,7 @@ taxonomy_long = ldply(1:length(classifs), function(i) {
   classif %>% 
     filter(rank %in% c('superkingdom', 'kingdom', 'subkingdom', 'phylum', 'subphylum', 'class', 'subclass', 'order', 'family', 'genus', 'species', 'varietas')) %>%
     rename(taxid = id) %>%
+    mutate(rank = ifelse(rank == 'superkingdom', 'domain', rank)) %>%
     rbind(c(name = classif[classif$id == taxid, ]$name, rank = 'assembly', taxid = taxid))
 })
 
