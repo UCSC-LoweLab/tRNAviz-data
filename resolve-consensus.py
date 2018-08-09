@@ -6,6 +6,7 @@ import pandas as pd
 import numpy
 import argparse
 import datetime
+import re
 from collections import OrderedDict
 message('done\n')
 
@@ -65,8 +66,11 @@ def main():
   message('Done\n')
   
   message('Exporting results to {}...'.format(output_file))
-  consensus = consensus.set_index(['isotype', 'taxid', 'position']).unstack('position')
+  consensus = consensus.set_index(['taxid', 'isotype', 'position']).unstack('position')
   consensus.columns = consensus.columns.get_level_values(1)
+  # Make sure all positions are included even if no consensus is found
+  consensus = consensus.append(pd.DataFrame(columns = list(positions.values()))).fillna('')
+  consensus = consensus[list(positions.values())]
   consensus.to_csv(path_or_buf = output_file, sep = '\t')
   message('done\n')
 
@@ -84,7 +88,6 @@ def resolve_consensus_isotypes(trnas):
 def resolve_consensus(trnas):
   '''Resolve consensus features across positions given a set of tRNAs'''
   consensus = [] # to be converted into a pandas dataframe later
-
   for position in positions:
     current_position = {'position': positions[position]}
     freqs = trnas.loc[:, positions[position]].value_counts(normalize = True)
@@ -115,6 +118,22 @@ def get_candidate_features(features, combos):
       candidates.append(combo)
   return candidates
 
+def get_position_order(position):
+  '''Helper function for returning a value for sorting position-based columns, especially with variable insertions'''
+  metadata_cols = ['taxid', 'isotype']
+  if position in metadata_cols:
+    return metadata_cols.index(position) - 50
+  if position == "20a": return 20.1
+  if position == "20b": return 20.2
+  digits = re.findall('\d+', position)
+  if len(digits) == 0: return -1
+  insert = 0
+  if 'i' in position and len(digits) == 2: insert = float(digits[1]) / 1000
+  if position[0] == 'V':
+    if ':' in position: return int(digits[0]) + 45 - 10 + insert # V11~V17
+    else: return int(digits[0]) + 45 + 7 + insert # V1~V5
+  if int(digits[0]) >= 46: return int(digits[0]) + 100 + insert # just add an arbitrarily large number to skip v-arm
+  return int(digits[0]) + insert
 
 def parse_args():
   parser = argparse.ArgumentParser(description = "Generate table of tRNA features using tRNAscan-SE output")
