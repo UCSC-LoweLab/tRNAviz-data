@@ -84,7 +84,7 @@ def process_tscan_output(genomes_df):
 
   for row in genomes_df.itertuples():
     message('\tProcessing tRNAs from {}...'.format(row.assembly))
-    
+
     # Process .out file. We want a list of approved tRNAs and their intron lengths.
     approved_tRNAs = []
     intron_lengths = []
@@ -95,6 +95,7 @@ def process_tscan_output(genomes_df):
       ).itertuples()
     for metadata in tscanout_handle:
       if 'pseudo' in metadata.note: continue
+      if 'trunc' in metadata.note: continue
       seqname = '{}.trna{}-{}{}'.format(metadata.seqname.strip(), metadata.trna_number, metadata.isotype.strip(), metadata.ac.strip())
       approved_tRNAs.append(seqname)
       intron_length = abs(metadata.intron_start - metadata.intron_end)
@@ -199,6 +200,13 @@ def parse_alignment_into_trna_df(positions):
 
 
 def annotate_trnas(trnas):
+  message('\tAdjusting isotype designations for Met, iMet and Ile2...')
+  imet_indices = trnas[(trnas.isotype == "Met") & (trnas.best_model == "iMet")].index
+  trnas.loc[imet_indices, 'isotype'] = 'iMet'
+  ile2_indices = trnas[(trnas.isotype == "Met") & (trnas.best_model == "Ile2")].index
+  trnas.loc[ile2_indices, 'isotype'] = 'Ile2'
+  message('done\n')
+
   message('\tCalculating stem GC content...')
   paired_cols = trnas.columns[list(map(lambda x: (':' in x), trnas.columns))]
   trnas['stemGC'] = trnas[paired_cols].apply(lambda x: sum((x == "G:C") | (x == "C:G"))/len(paired_cols), axis=1)
@@ -224,7 +232,6 @@ def annotate_trnas(trnas):
   intron_cols = list(filter(lambda x: x[0:3] == '37i', trnas.columns))
   insertion_cols = list(filter(lambda x: bool(re.search('^\d+i', x)) & (x not in intron_cols), trnas.columns))
   trnas['insertions'] = trnas[insertion_cols].apply(lambda x: sum(x != '.'), axis=1)
-
   base_cols = list(filter(lambda x: bool(re.match('^\d+$', x)) & (x not in ['74', '75', '76', '17', '17a', '20a', '20b']), trnas.columns))
   trnas['deletions'] = trnas[base_cols].apply(lambda x: ''.join(x).count('-'), axis=1)
   message('done\n')
@@ -235,7 +242,7 @@ def annotate_trnas(trnas):
   trnas['dloop'] = trnas[dloop_cols].apply(lambda x: len(x[(x != '.') & (x != '-')]), axis = 1)
   # Leu, Ser have a 3 bp D stem
   dloop_II_cols = list(filter(lambda col: ':' not in col, bounds_to_cols(trnas.columns, 13, 22)))
-  trnas.loc[(trnas.isotype == 'Leu') | (trnas.isotype == 'Ser'), 'dloop'] = trnas[dloop_II_cols].apply(lambda x: len(x[(x != '.') & (x != '-')]), axis = 1)
+  trnas.loc[(trnas.isotype == 'Leu') | (trnas.isotype == 'Ser') | (trnas.isotype == 'Tyr'), 'dloop'] = trnas[dloop_II_cols].apply(lambda x: len(x[(x != '.') & (x != '-')]), axis = 1)
   message('done\n')
   message('\t\tCalculating anticodon loop lengths...')
   acloop_cols = list(filter(lambda x: not re.match('37i.+', x), bounds_to_cols(trnas.columns, 32, 38)))
@@ -289,7 +296,7 @@ def get_position_order(position):
 def parse_args():
   parser = argparse.ArgumentParser(description = "Generate table of tRNA features using tRNAscan-SE output")
   parser.add_argument('-g', '--genome_table_path', default = 'genomes.tsv', help = '')
-  parser.add_argument('-n', '--numbering_model', default = '/projects/lowelab/users/blin/tRNAscan/models/domain-specific/euk-num-092016.cm', help = '')
+  parser.add_argument('-n', '--numbering_model', required = True, help = 'Covariance model optimized for tRNA numbering')
   parser.add_argument('-o', '--output_file', default = 'tRNAs-{}.tsv'.format(timestamp), help = '')
   parser.add_argument('-a', '--alignment_file', default = 'tRNAs-{}.sto'.format(timestamp), help = '')
   parser.add_argument('-f', '--tRNA_fasta', default = 'tRNAs-{}.fa'.format(timestamp), help = '')
