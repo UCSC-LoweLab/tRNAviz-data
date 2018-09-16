@@ -65,14 +65,21 @@ def read_genomes_table(path):
 
   genomes_df['iso_file'] = genomes_df.dbname.apply(lambda dbname: 'data/iso/{}-tRNAs.iso'.format(dbname))
   genomes_df['ss_file'] = genomes_df.dbname.apply(lambda dbname: 'data/ss/{}-tRNAs.ss'.format(dbname))
-  genomes_df['out_file'] = genomes_df.dbname.apply(lambda dbname: 'data/out/{}-tRNAs.out'.format(dbname))
   genomes_df['tRNA_file'] = genomes_df.dbname.apply(lambda dbname: 'data/tRNAs/{}-tRNAs.fa'.format(dbname))
+  genomes_df['out_file'] = genomes_df.dbname.apply(lambda dbname: 'data/out/{}-tRNAs.out'.format(dbname))
+  # if domain == 'euk':
+  #   genomes_df.loc[genomes_df['kingdom'] != 'Fungi', 'out_file'] = genomes_df[genomes_df['kingdom'] != 'Fungi'].dbname.apply(lambda dbname: 'data/out/{}-tRNAs-detailed.out'.format(dbname))
 
   # Validate files
   for row in genomes_df.itertuples():
     for file_type in ['iso_file', 'ss_file', 'out_file']:
       if not os.path.exists(getattr(row, file_type)):
-        raise Exception('{} file {} does not exist'.format(file_type, getattr(row, file_type)))
+        if domain == 'euk':
+          detailed_out_file = 'data/out/{}-tRNAs-detailed.out'.format(row.dbname)
+          if os.path.exists(detailed_out_file):
+            genomes_df.loc[genomes_df['taxid'] == row.taxid, 'out_file'] = detailed_out_file
+            continue
+        raise Exception('{} does not exist for {}'.format(file_type, getattr(row, file_type)))
 
   return genomes_df
 
@@ -90,12 +97,33 @@ def process_tscan_output(genomes_df):
     approved_tRNAs = []
     intron_lengths = []
     tscanout_cols = ['seqname', 'trna_number', 'start', 'end', 'isotype', 'ac', 'intron_start', 'intron_end', 'score', 'hmm_score', 'sec_score', 'inf', 'best_model', 'best_score', 'note']
+    tscanout_dtypes = {'seqname': str, 'start': int, 'end': int, 'score': float, 'intron_start': str, 'intron_end': str}
     if domain != 'euk': tscanout_cols.remove('inf')
-    tscanout = pd.read_table(row.out_file, sep = "\t", skiprows = 3, na_filter = False, header = None,
-      names = tscanout_cols, dtype = {'seqname': str, 'start': int, 'end': int, 'score': float, 'intron_start': str, 'intron_end': str})
-    
+    try:
+      tscanout = pd.read_table(row.out_file, sep = "\t", skiprows = 3, na_filter = False, header = None, names = tscanout_cols, dtype = tscanout_dtypes)
+    except:
+      # -detailed.out files have an extra Type column
+      tscanout_cols = ['seqname', 'trna_number', 'start', 'end', 'isotype', 'ac', 'intron_start', 'intron_end', 'score', 'hmm_score', 'sec_score', 'inf', 'best_model', 'best_score', 'type', 'note']
+      tscanout = pd.read_table(row.out_file, sep = "\t", skiprows = 3, na_filter = False, header = None, names = tscanout_cols, dtype = tscanout_dtypes)
+
     for metadata in tscanout.itertuples():
-      if decide_to_skip(metadata): continue
+      # Filter out tRNAs
+      if 'pseudo' in metadata.note or 'trunc' in metadata.note or 'exon' in metadata.isotype or 'NCI' in metadata.note: 
+        continue
+      if domain == 'euk':
+        if row.phylum == 'Chordata': 
+          valid_notes = ['high confidence set']
+        else:
+          valid_notes = ["", "high confidence set", "secondary filtered", "tertiary filtered", "Quality set", 
+            "unexpected anticodon", "Unexpected anticodon;First-pass quality filtered", "Isotype mismatch;First-pass quality filtered", 
+            "First-pass quality filtered", "Second-pass quality filtered", "Isotype mismatch;Isotype mismatch;First-pass quality filtered"]
+        if metadata.note not in valid_notes: continue
+        if row.kingdom == 'Fungi':
+          if metadata.score < 25: continue
+        else:
+          if metadata.score < 50: continue
+
+      # Save tRNAs
       intron_length = abs(int(metadata.intron_start) - int(metadata.intron_end))
       if intron_length > 0: intron_length = intron_length + 1
       intron_lengths.append(intron_length)
@@ -145,25 +173,6 @@ def process_tscan_output(genomes_df):
 
   trna_metadata = pd.DataFrame(trna_metadata).set_index('seqname')
   return seqs, trna_metadata
-
-def decide_to_skip(metadata):
-  if 'pseudo' in metadata.note or 'trunc' in metadata.note or 'exon' in metadata.isotype or 'NCI' in metadata.note: 
-    return True
-  if domain == 'euk':
-    if row.phylum == 'Chordata': 
-      valid_notes = ['high confidence set']
-    else:
-      valid_notes = ["", "high confidence set", "secondary filtered", "tertiary filtered", "Quality set", 
-        "unexpected anticodon", "Unexpected anticodon;First-pass quality filtered", "Isotype mismatch;First-pass quality filtered", 
-        "First-pass quality filtered", "Second-pass quality filtered", "Isotype mismatch;Isotype mismatch;First-pass quality filtered"]
-    if metadata.note not in valid_notes: return True
-    
-    if row.kingdom == 'Fungi':
-      if metadata.score < 25: return True
-    else:
-      if metadata.score < 50: return True
-
-  return False
 
 def get_iso_scores(iso_file):
   iso_scores = pd.read_table(iso_file, header = 0)
