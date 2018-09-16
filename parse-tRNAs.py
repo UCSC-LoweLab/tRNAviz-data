@@ -13,6 +13,7 @@ from tRNA_position import annotate_positions, get_position_base_from_seq
 message('done\n')
 
 def main():
+  message('tRNA parse for domain {}'.format(domain))
   message('Loading species data from {}...'.format(genome_table_path))
   genomes_df = read_genomes_table(genome_table_path)
   message('done\n')
@@ -187,7 +188,7 @@ def parse_alignment_into_trna_df(positions):
     if line[0] in ["#", '\n', '/']:
       continue
     seqname, seq = line.strip().split()
-    seqnames.append(seqname)
+    if seqname not in seqnames: seqnames.append(seqname)
     seqs[seqname] += seq
   alignment_fhandle.close() 
   
@@ -245,7 +246,10 @@ def annotate_trnas(trnas):
   trnas['dloop'] = trnas[dloop_cols].apply(lambda x: len(x[(x != '.') & (x != '-')]), axis = 1)
   # Leu, Ser have a 3 bp D stem
   dloop_II_cols = list(filter(lambda col: ':' not in col, bounds_to_cols(trnas.columns, 13, 22)))
-  trnas.loc[(trnas.isotype == 'Leu') | (trnas.isotype == 'Ser') | (trnas.isotype == 'Tyr'), 'dloop'] = trnas[dloop_II_cols].apply(lambda x: len(x[(x != '.') & (x != '-')]), axis = 1)
+  if domain == 'bact':
+    trnas.loc[(trnas.isotype == 'Leu') | (trnas.isotype == 'Ser') | (trnas.isotype == 'Tyr'), 'dloop'] = trnas[dloop_II_cols].apply(lambda x: len(x[(x != '.') & (x != '-')]), axis = 1)
+  else:
+    trnas.loc[(trnas.isotype == 'Leu') | (trnas.isotype == 'Ser'), 'dloop'] = trnas[dloop_II_cols].apply(lambda x: len(x[(x != '.') & (x != '-')]), axis = 1)
   message('done\n')
   message('\t\tCalculating anticodon loop lengths...')
   acloop_cols = list(filter(lambda x: not re.match('37i.+', x), bounds_to_cols(trnas.columns, 32, 38)))
@@ -298,6 +302,7 @@ def get_position_order(position):
 
 def parse_args():
   parser = argparse.ArgumentParser(description = "Generate table of tRNA features using tRNAscan-SE output")
+  parser.add_argument('-d', '--domain', required = True, choices = ['bact', 'euk', 'arch'], help = 'Select domain (euk, bact, or arch)')
   parser.add_argument('-g', '--genome_table_path', default = 'genomes.tsv', help = '')
   parser.add_argument('-n', '--numbering_model', required = True, help = 'Covariance model optimized for tRNA numbering')
   parser.add_argument('-o', '--output_file', default = 'tRNAs-{}.tsv'.format(timestamp), help = '')
@@ -311,6 +316,7 @@ def parse_args():
 if __name__ == '__main__':
   timestamp = '{:%m%d%y-%H%M%S}'.format(datetime.datetime.now())
   args = parse_args()
+  domain = args.domain
   genome_table_path = args.genome_table_path
   tRNA_fasta = args.tRNA_fasta
   alignment_file = args.alignment_file
