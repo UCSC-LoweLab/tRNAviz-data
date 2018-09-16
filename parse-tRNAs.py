@@ -13,7 +13,7 @@ from tRNA_position import annotate_positions, get_position_base_from_seq
 message('done\n')
 
 def main():
-  message('tRNA parse for domain {}'.format(domain))
+  message('== Parsing tRNAs for domain {} ==\n'.format(domain))
   message('Loading species data from {}...'.format(genome_table_path))
   genomes_df = read_genomes_table(genome_table_path)
   message('done\n')
@@ -89,22 +89,18 @@ def process_tscan_output(genomes_df):
     # Process .out file. We want a list of approved tRNAs and their intron lengths.
     approved_tRNAs = []
     intron_lengths = []
-    tscanout_handle = pd.read_table(row.out_file, sep = "\t", skiprows = 3, na_filter = False, header = None,
-      names = ['seqname', 'trna_number', 'start', 'end', 'isotype', 'ac', 'intron_start', 'intron_end', 'score', 'hmm_score', 'sec_score', 'inf', 'best_model', 'best_score', 'note'],
-      dtype = {'seqname': str, 'start': int, 'end': int, 'intron_start': str, 'intron_end': str}
-      ).itertuples()
-    for metadata in tscanout_handle:
-      if 'pseudo' in metadata.note: continue
-      if 'trunc' in metadata.note: continue
-      if 'exon1' in metadata.note: continue
-      if 'exon2' in metadata.note: continue
-      if 'exon3' in metadata.note: continue
-      if ',' not in metadata.intron_start:
-        intron_length = abs(int(metadata.intron_start) - int(metadata.intron_end))
-        if intron_length > 0: intron_length = intron_length + 1
-        intron_lengths.append(intron_length)
-        seqname = '{}.trna{}-{}{}'.format(metadata.seqname.strip(), metadata.trna_number, metadata.isotype.strip(), metadata.ac.strip())
-        approved_tRNAs.append(seqname)
+    tscanout_cols = ['seqname', 'trna_number', 'start', 'end', 'isotype', 'ac', 'intron_start', 'intron_end', 'score', 'hmm_score', 'sec_score', 'inf', 'best_model', 'best_score', 'note']
+    if domain != 'euk': tscanout_cols.remove('inf')
+    tscanout = pd.read_table(row.out_file, sep = "\t", skiprows = 3, na_filter = False, header = None,
+      names = tscanout_cols, dtype = {'seqname': str, 'start': int, 'end': int, 'score': float, 'intron_start': str, 'intron_end': str})
+    
+    for metadata in tscanout.itertuples():
+      if decide_to_skip(metadata): continue
+      intron_length = abs(int(metadata.intron_start) - int(metadata.intron_end))
+      if intron_length > 0: intron_length = intron_length + 1
+      intron_lengths.append(intron_length)
+      seqname = '{}.trna{}-{}{}'.format(metadata.seqname.strip(), metadata.trna_number, metadata.isotype.strip(), metadata.ac.strip())
+      approved_tRNAs.append(seqname)
 
     # Parse isotype-specific scores
     iso_scores = get_iso_scores(row.iso_file)
@@ -150,6 +146,24 @@ def process_tscan_output(genomes_df):
   trna_metadata = pd.DataFrame(trna_metadata).set_index('seqname')
   return seqs, trna_metadata
 
+def decide_to_skip(metadata):
+  if 'pseudo' in metadata.note or 'trunc' in metadata.note or 'exon' in metadata.isotype or 'NCI' in metadata.note: 
+    return True
+  if domain == 'euk':
+    if row.phylum == 'Chordata': 
+      valid_notes = ['high confidence set']
+    else:
+      valid_notes = ["", "high confidence set", "secondary filtered", "tertiary filtered", "Quality set", 
+        "unexpected anticodon", "Unexpected anticodon;First-pass quality filtered", "Isotype mismatch;First-pass quality filtered", 
+        "First-pass quality filtered", "Second-pass quality filtered", "Isotype mismatch;Isotype mismatch;First-pass quality filtered"]
+    if metadata.note not in valid_notes: return True
+    
+    if row.kingdom == 'Fungi':
+      if metadata.score < 25: return True
+    else:
+      if metadata.score < 50: return True
+
+  return False
 
 def get_iso_scores(iso_file):
   iso_scores = pd.read_table(iso_file, header = 0)
