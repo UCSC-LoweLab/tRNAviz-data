@@ -88,19 +88,22 @@ def process_tscan_output(genomes_df):
     # Process .out file. We want a list of approved tRNAs and their intron lengths.
     approved_tRNAs = []
     intron_lengths = []
-  
     tscanout_handle = pd.read_table(row.out_file, sep = "\t", skiprows = 3, na_filter = False, header = None,
       names = ['seqname', 'trna_number', 'start', 'end', 'isotype', 'ac', 'intron_start', 'intron_end', 'score', 'hmm_score', 'sec_score', 'inf', 'best_model', 'best_score', 'note'],
-      dtype = {'seqname': str, 'start': int, 'end': int, 'intron_start': int, 'intron_end': int}
+      dtype = {'seqname': str, 'start': int, 'end': int, 'intron_start': str, 'intron_end': str}
       ).itertuples()
     for metadata in tscanout_handle:
       if 'pseudo' in metadata.note: continue
       if 'trunc' in metadata.note: continue
-      seqname = '{}.trna{}-{}{}'.format(metadata.seqname.strip(), metadata.trna_number, metadata.isotype.strip(), metadata.ac.strip())
-      approved_tRNAs.append(seqname)
-      intron_length = abs(metadata.intron_start - metadata.intron_end)
-      if intron_length > 0: intron_length = intron_length + 1
-      intron_lengths.append(intron_length)
+      if 'exon1' in metadata.note: continue
+      if 'exon2' in metadata.note: continue
+      if 'exon3' in metadata.note: continue
+      if ',' not in metadata.intron_start:
+        intron_length = abs(int(metadata.intron_start) - int(metadata.intron_end))
+        if intron_length > 0: intron_length = intron_length + 1
+        intron_lengths.append(intron_length)
+        seqname = '{}.trna{}-{}{}'.format(metadata.seqname.strip(), metadata.trna_number, metadata.isotype.strip(), metadata.ac.strip())
+        approved_tRNAs.append(seqname)
 
     # Parse isotype-specific scores
     iso_scores = get_iso_scores(row.iso_file)
