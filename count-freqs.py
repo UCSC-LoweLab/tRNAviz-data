@@ -51,6 +51,7 @@ def main():
 
   message('Parsing clades and taxonomic ranks...')
   taxonomy = pd.read_csv(taxonomy_file, sep = '\t', dtype = {'name': str, 'rank': str, 'taxid': str})
+  taxonomy = taxonomy[taxonomy['rank'] != 'assembly']
   message('done\n')
 
   message('Counting freqs for {} clades...\n'.format(taxonomy.shape[0]))

@@ -52,6 +52,7 @@ def main():
 
   message('Parsing clades and taxonomic ranks...')
   taxonomy = pd.read_csv(taxonomy_file, sep = '\t', dtype = {'name': str, 'rank': str, 'taxid': str})
+  taxonomy = taxonomy[taxonomy['rank'] != 'assembly']
   message('done\n')
 
   message('Calculating consensus features for {} clades...\n'.format(taxonomy.shape[0]))
@@ -88,7 +89,7 @@ def main():
   consensus = consensus.set_index(['taxid', 'rank', 'isotype', 'position']).unstack('position')
   consensus.columns = consensus.columns.get_level_values(1)
   # Make sure all positions are included even if no consensus is found
-  consensus = consensus.append(pd.DataFrame(columns = list(positions.values()))).fillna('')
+  consensus = consensus.append(pd.DataFrame(columns = list(positions.values())), sort = True).fillna('')
   consensus = consensus[list(positions.values())]
   consensus.to_csv(path_or_buf = output_file, sep = '\t')
   message('done\n')
@@ -136,23 +137,6 @@ def get_candidate_features(features, combos):
     if numpy.all(numpy.isin(combos[combo], features)):
       candidates.append(combo)
   return candidates
-
-def get_position_order(position):
-  '''Helper function for returning a value for sorting position-based columns, especially with variable insertions'''
-  metadata_cols = ['taxid', 'isotype']
-  if position in metadata_cols:
-    return metadata_cols.index(position) - 50
-  if position == "20a": return 20.1
-  if position == "20b": return 20.2
-  digits = re.findall('\d+', position)
-  if len(digits) == 0: return -1
-  insert = 0
-  if 'i' in position and len(digits) == 2: insert = float(digits[1]) / 1000
-  if position[0] == 'V':
-    if ':' in position: return int(digits[0]) + 45 - 10 + insert # V11~V17
-    else: return int(digits[0]) + 45 + 7 + insert # V1~V5
-  if int(digits[0]) >= 46: return int(digits[0]) + 100 + insert # just add an arbitrarily large number to skip v-arm
-  return int(digits[0]) + insert
 
 def parse_args():
   parser = argparse.ArgumentParser(description = "Generate table of tRNA features using tRNAscan-SE output")
