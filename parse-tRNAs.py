@@ -288,7 +288,7 @@ def annotate_trnas(trnas):
   message('done\n')
 
   message('\tMarking duplicates...')
-  trnas['primary'] = trnas.groupby(['species', 'isotype'], group_keys = False).apply(lambda subset: subset.score.duplicated())
+  trnas['primary'] = trnas.groupby(['species', 'isotype'], group_keys = False).apply(lambda subset: -subset.score.duplicated())
   message('done\n')
 
   return(trnas)
