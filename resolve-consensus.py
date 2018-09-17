@@ -52,10 +52,9 @@ def main():
 
   message('Parsing clades and taxonomic ranks...')
   taxonomy = pd.read_csv(taxonomy_file, sep = '\t', dtype = {'name': str, 'rank': str, 'taxid': str})
-  taxonomy = taxonomy[taxonomy['rank'] != 'assembly']
   message('done\n')
 
-  message('Calculating consensus features for {} clades...\n'.format(taxonomy.shape[0]))
+  message('Calculating consensus features for {} clades...\n'.format(taxonomy[taxonomy['rank'] != 'assembly'].shape[0]))
   if saved and os.path.exists('consensus-saved.pkl'):
     message('\tLoading saved data...')
     consensus = pd.read_pickle('consensus-saved.pkl')
@@ -66,6 +65,7 @@ def main():
   else:
     consensus = pd.DataFrame()
   for name, rank, taxid in taxonomy.itertuples(index = False):
+    if rank == 'assembly': continue
     try:
       message('\tResolving consensus for {} ({})...'.format(name, rank))
       if saved and 'taxid' in consensus.columns and 'rank' in consensus.columns and not consensus[(consensus['rank'] == rank) & (consensus['taxid'] == taxid)].empty:
@@ -115,8 +115,8 @@ def resolve_consensus(trnas):
     for candidate in candidate_features:
       freq_check = freqs[freqs.index.isin(combos[candidate]) & (freqs >= 0.05)].sum() > 0.9
       species_check = all(
-        trnas.loc[:, [positions[position], 'assembly']].groupby(
-          'assembly', group_keys = False
+        trnas.loc[:, [positions[position], 'species']].groupby(
+          'species', group_keys = False
         ).apply(
           lambda subset, position, combo: any(subset.loc[:, position].isin(combo)), 
           position = positions[position],

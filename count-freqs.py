@@ -51,10 +51,9 @@ def main():
 
   message('Parsing clades and taxonomic ranks...')
   taxonomy = pd.read_csv(taxonomy_file, sep = '\t', dtype = {'name': str, 'rank': str, 'taxid': str})
-  taxonomy = taxonomy[taxonomy['rank'] != 'assembly']
   message('done\n')
 
-  message('Counting freqs for {} clades...\n'.format(taxonomy.shape[0]))
+  message('Counting freqs for {} clades...\n'.format(taxonomy[taxonomy['rank'] != 'assembly'].shape[0]))
   if saved and os.path.exists('freqs-saved.pkl'):
     message('\tLoading saved data...')
     freqs = pd.read_pickle('freqs-saved.pkl')
@@ -65,6 +64,7 @@ def main():
   else:
     freqs = pd.DataFrame()
   for name, rank, taxid in taxonomy.itertuples(index = False):
+    if rank == 'assembly': continue
     try:
       message('\tCounting base frequencies for {} {}...'.format(rank, name))
       if saved and 'taxid' in freqs.columns and 'rank' in freqs.columns and not freqs[(freqs['rank'] == rank) & (freqs['taxid'] == taxid)].empty:
