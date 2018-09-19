@@ -96,15 +96,18 @@ def process_tscan_output(genomes_df):
     # Process .out file. We want a list of approved tRNAs and their intron lengths.
     approved_tRNAs = []
     intron_lengths = []
-    tscanout_cols = ['seqname', 'trna_number', 'start', 'end', 'isotype', 'ac', 'intron_start', 'intron_end', 'score', 'hmm_score', 'sec_score', 'inf', 'best_model', 'best_score', 'note']
-    tscanout_dtypes = {'seqname': str, 'start': int, 'end': int, 'score': float, 'intron_start': str, 'intron_end': str}
-    if domain != 'euk': tscanout_cols.remove('inf')
+    tscanout_dtypes = {'seqname': str, 'start': int, 'end': int, 'isotype': str, 'ac': str, 'intron_start': str, 'intron_end': str, 
+      'score': float, 'hmm_score': float, 'best_model': str, 'best_score': float}
     try:
-      tscanout = pd.read_table(row.out_file, sep = "\t", skiprows = 3, na_filter = False, header = None, names = tscanout_cols, dtype = tscanout_dtypes)
-    except:
-      # -detailed.out files have an extra Type column
       tscanout_cols = ['seqname', 'trna_number', 'start', 'end', 'isotype', 'ac', 'intron_start', 'intron_end', 'score', 'hmm_score', 'sec_score', 'inf', 'best_model', 'best_score', 'type', 'note']
       tscanout = pd.read_table(row.out_file, sep = "\t", skiprows = 3, na_filter = False, header = None, names = tscanout_cols, dtype = tscanout_dtypes)
+    except ValueError:
+      try:
+        tscanout_cols.remove('type')
+        tscanout = pd.read_table(row.out_file, sep = "\t", skiprows = 3, na_filter = False, header = None, names = tscanout_cols, dtype = tscanout_dtypes)
+      except ValueError:
+        tscanout_cols.remove('inf')
+        tscanout = pd.read_table(row.out_file, sep = "\t", skiprows = 3, na_filter = False, header = None, names = tscanout_cols, dtype = tscanout_dtypes)
 
     for metadata in tscanout.itertuples():
       # Filter out tRNAs
@@ -123,11 +126,16 @@ def process_tscan_output(genomes_df):
         else:
           if metadata.score < 50: continue
 
+      # Set isotype
+      isotype = metadata.isotype.strip()
+      if isotype == 'Met':
+        if metadata.best_model.strip() in ['iMet', 'fMet', 'Ile2']: isotype = metadata.best_model.strip()
+
       # Save tRNAs
       intron_length = abs(int(metadata.intron_start) - int(metadata.intron_end))
       if intron_length > 0: intron_length = intron_length + 1
       intron_lengths.append(intron_length)
-      seqname = '{}.trna{}-{}{}'.format(metadata.seqname.strip(), metadata.trna_number, metadata.isotype.strip(), metadata.ac.strip())
+      seqname = '{}.trna{}-{}{}'.format(metadata.seqname.strip(), metadata.trna_number, isotype, metadata.ac.strip())
       approved_tRNAs.append(seqname)
 
     # Parse isotype-specific scores
@@ -230,6 +238,8 @@ def annotate_trnas(trnas):
   message('\tAdjusting isotype designations for Met, iMet and Ile2...')
   imet_indices = trnas[(trnas.isotype == "Met") & (trnas.best_model == "iMet")].index
   trnas.loc[imet_indices, 'isotype'] = 'iMet'
+  fmet_indices = trnas[(trnas.isotype == "Met") & (trnas.best_model == "fMet")].index
+  trnas.loc[fmet_indices, 'isotype'] = 'fMet'
   ile2_indices = trnas[(trnas.isotype == "Met") & (trnas.best_model == "Ile2")].index
   trnas.loc[ile2_indices, 'isotype'] = 'Ile2'
   message('done\n')
