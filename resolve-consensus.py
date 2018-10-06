@@ -126,6 +126,10 @@ def resolve_consensus(trnas):
       if species_check and freq_check:
         current_position['consensus'] = candidate
         break
+      # High mismatch rate positions don't need a 5% inclusion rate, 90% threshold, or species check
+      if candidate == 'Mismatched':
+        if freqs[freqs.index.isin(combos[candidate])].sum() > 0.7:
+          current_position['consensus'] = 'High mismatch rate'
     if 'consensus' in current_position:
       consensus.append(current_position)
   return pd.DataFrame(consensus)
@@ -134,7 +138,7 @@ def get_candidate_features(features, combos):
   candidates = []
   for combo in combos: #  e.g., ('A', 'G')
     # current combo is a candidate feature if each letter in the combo exists in the feature set
-    if numpy.all(numpy.isin(combos[combo], features)):
+    if numpy.any(numpy.isin(combos[combo], features)):
       candidates.append(combo)
   return candidates
 
@@ -168,7 +172,7 @@ if __name__ == '__main__':
     ('B', ("C", "G", "U")), ('D', ("A", "G", "U")), ('H', ("A", "C", "U")), ('V', ("A", "C", "G")), 
     ('Paired', ("A:U", "U:A", "C:G", "G:C", "G:U", "U:G")), 
     ('Mismatched', ("A:A", "G:G", "C:C", "U:U", "A:G", "A:C", "C:A", "C:U", "G:A", "U:C")), 
-    ('Bulge', ("A:-", "U:-", "C:-", "G:-", "-:A", "-:G", "-:C", "-:U"))]
+    ('Malformed', ("A:-", "U:-", "C:-", "G:-", "-:A", "-:G", "-:C", "-:U"))]
   positions = OrderedDict(positions)
   combos = OrderedDict(combos)
   main()
