@@ -245,8 +245,8 @@ def annotate_trnas(trnas):
   message('done\n')
 
   message('\tCalculating stem GC content...')
-  paired_cols = trnas.columns[list(map(lambda x: (':' in x), trnas.columns))]
-  trnas['stemGC'] = trnas[paired_cols].apply(lambda x: sum((x == "G:C") | (x == "C:G"))/len(paired_cols), axis=1)
+  gc_cols = list(filter(lambda x: re.search('\d', x) and ':' not in x, trnas.columns))
+  trnas['GCcontent'] = trnas[gc_cols].apply(lambda x: sum((x == 'G') | (x == 'C')) / sum((x != '-') & (x != '.')), axis = 1)
   message('done\n')
 
   message('\tSplitting paired to single base columns...')
@@ -317,7 +317,7 @@ def bounds_to_cols(cols, start, end):
 
 def get_position_order(position):
   '''Helper function for returning a value for sorting position-based columns, especially with variable insertions'''
-  metadata_cols = ['isotype', 'anticodon', 'score', 'primary', 'best_model', 'isoscore', 'isoscore_ac', 'dbname', 'assembly', 'varietas', 'species', 'genus', 'family', 'order', 'subclass', 'class', 'subphylum', 'phylum', 'subkingdom', 'kingdom', 'domain', 'taxid', 'stemGC', 'insertions', 'deletions', 'D-loop', 'AC-loop', 'TPC-loop', 'V-arm', 'intron_length']
+  metadata_cols = ['isotype', 'anticodon', 'score', 'primary', 'best_model', 'isoscore', 'isoscore_ac', 'dbname', 'assembly', 'varietas', 'species', 'genus', 'family', 'order', 'subclass', 'class', 'subphylum', 'phylum', 'subkingdom', 'kingdom', 'domain', 'taxid', 'GCcontent', 'insertions', 'deletions', 'D-loop', 'AC-loop', 'TPC-loop', 'V-arm', 'intron_length']
   if position in metadata_cols:
     return metadata_cols.index(position) - 50
   if position == "20a": return 20.1

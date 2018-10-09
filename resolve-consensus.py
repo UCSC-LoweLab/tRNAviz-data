@@ -38,7 +38,7 @@ def main():
     'kingdom': str,
     'domain': str,
     'taxid': str,
-    'stemGC': float,
+    'GCcontent': float,
     'insertions': int,
     'deletions': int,
     'intron_length': int,
