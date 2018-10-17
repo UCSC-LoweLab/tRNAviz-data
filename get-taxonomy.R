@@ -100,23 +100,42 @@ genome_table = genome_table[taxonomy_long[match(genome_table$species, taxonomy_l
 
 write.table(genome_table, file = 'genomes.tsv', quote = FALSE, sep = '\t', row.names = FALSE)
 
-# match filtering in taxonomy_long
+# match filtering in taxonomy_all
 # easier to just run the classifs processing loop again with the new genome table
-taxonomy_long = ldply(1:length(classifs), function(i) {
+taxonomy_all = ldply(1:length(classifs), function(i) {
   taxid = names(classifs)[i]
   if (!(taxid %in% genome_table$taxid)) return(data.frame()) # filter out entries for which files are missing
-  classif = classifs[[i]]
-  if (taxid %in% classif$id) assembly = classif[classif$id == taxid, ]$name
-  else assembly = classif[classif$rank == 'species', ]$name
-  classif %>% 
+  classif_set = classifs[[i]]
+  if (taxid %in% classif_set$id) assembly = classif_set[classif_set$id == taxid, ]$name
+  else assembly = classif_set[classif_set$rank == 'species', ]$name
+
+  classif_set = classifs[[i]] %>% 
     filter(rank %in% c('superkingdom', 'kingdom', 'subkingdom', 'phylum', 'subphylum', 'class', 'subclass', 'order', 'family', 'genus', 'species')) %>%
     rename(taxid = id) %>%
     mutate(rank = ifelse(rank == 'superkingdom', 'domain', rank)) %>%
     rbind(c(name = assembly, rank = 'assembly', taxid = taxid))
+
+  ldply(1:nrow(classif_set), function(j) {
+    row = classif_set[j, ]
+    parent_taxids = classif_set %>% mutate(taxid = ifelse(row_number() <= which(classif_set$rank == row$rank), taxid, '')) %>%
+      select(rank, taxid) %>%
+      spread(rank, taxid, fill = '')
+    row %>% cbind(parent_taxids)
+  })
 })
 
-# remove duplicates and same-name-assembly situations
-taxonomy_long = taxonomy_long %>% unique
+# remove duplicates and order columns
+taxonomy_all = taxonomy_all %>% 
+  replace(., is.na(.), '') %>%
+  unique %>%
+  select(name, rank, taxid, kingdom, subkingdom, phylum, subphylum, class, subclass, order, family, genus, species, assembly))
 
-write.table(taxonomy_long, file = 'taxonomy.tsv', quote = FALSE, sep = '\t', row.names = FALSE)
+# add missing genomes
+taxonomy_all = taxonomy_all %>% rbind(
+  taxonomy_all %>% filter(taxid == '4932') %>%
+    filter(row_number() == 1) %>%
+    mutate(name = 'Saccharomyces cerevisiae S288c', rank = 'assembly', taxid = '559292')
+)
+
+write.table(taxonomy_all, file = 'taxonomy.tsv', quote = FALSE, sep = '\t', row.names = FALSE)
 
