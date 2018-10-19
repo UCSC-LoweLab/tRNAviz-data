@@ -42,7 +42,7 @@ def main():
 
   message('Combine tRNA metadata, taxonomy, and features...')
   trnas = trnas.join(trna_metadata)
-  trnas = trnas.join(genomes_df.drop(['iso_file', 'ss_file', 'out_file', 'tRNA_file', 'dirname'], axis = 1).set_index('dbname'), on = 'dbname')
+  trnas = trnas.join(genomes_df.drop(['iso_file', 'ss_file', 'out_file', 'tRNA_file', 'taxid', 'name'], axis = 1).set_index('dbname'), on = 'dbname')
   message('done\n')
 
   message('Annotating tRNAs...\n')
@@ -61,14 +61,28 @@ def main():
 
 def read_genomes_table(path):
   '''Read genomes table, then add and validate paths to tRNAscan-SE output to genomes data frame'''
-  genomes_df = pd.read_table(path, index_col = False, dtype = {'taxid': str})
+  genomes_df = pd.read_table(path, index_col = False, dtype = {
+    'dbname': str,
+    'taxid': str,
+    'name': str,
+    'domain': str,
+    'kingdom': str,
+    'subkingdom': str,
+    'phylum': str,
+    'subphylum': str,
+    'class': str,
+    'subclass': str,
+    'order': str,
+    'family': str,
+    'genus': str,
+    'species': str,
+    'assembly': str
+  })
 
   genomes_df['iso_file'] = genomes_df.dbname.apply(lambda dbname: 'data/iso/{}-tRNAs.iso'.format(dbname))
   genomes_df['ss_file'] = genomes_df.dbname.apply(lambda dbname: 'data/ss/{}-tRNAs.ss'.format(dbname))
   genomes_df['tRNA_file'] = genomes_df.dbname.apply(lambda dbname: 'data/tRNAs/{}-tRNAs.fa'.format(dbname))
   genomes_df['out_file'] = genomes_df.dbname.apply(lambda dbname: 'data/out/{}-tRNAs.out'.format(dbname))
-  # if domain == 'euk':
-  #   genomes_df.loc[genomes_df['kingdom'] != 'Fungi', 'out_file'] = genomes_df[genomes_df['kingdom'] != 'Fungi'].dbname.apply(lambda dbname: 'data/out/{}-tRNAs-detailed.out'.format(dbname))
 
   # Validate files
   for row in genomes_df.itertuples():
@@ -91,7 +105,7 @@ def process_tscan_output(genomes_df):
   trna_metadata = [] # to be converted into a data frame
 
   for row in genomes_df.itertuples():
-    message('\tProcessing tRNAs from {}...'.format(row.assembly))
+    message('\tProcessing tRNAs from {} ({})...'.format(row.name, row.taxid))
 
     # Process .out file. We want a list of approved tRNAs and their intron lengths.
     approved_tRNAs = []
@@ -106,22 +120,24 @@ def process_tscan_output(genomes_df):
         tscanout_cols.remove('type')
         tscanout = pd.read_table(row.out_file, sep = "\t", skiprows = 3, na_filter = False, header = None, names = tscanout_cols, dtype = tscanout_dtypes)
       except ValueError:
-        tscanout_cols.remove('inf')
-        tscanout = pd.read_table(row.out_file, sep = "\t", skiprows = 3, na_filter = False, header = None, names = tscanout_cols, dtype = tscanout_dtypes)
-
+        try:
+          tscanout_cols.remove('inf')
+          tscanout = pd.read_table(row.out_file, sep = "\t", skiprows = 3, na_filter = False, header = None, names = tscanout_cols, dtype = tscanout_dtypes)
+        except ValueError:
+          tscanout = pd.read_table(row.out_file, sep = "\s+", skiprows = 3, na_filter = False, header = None, names = tscanout_cols, dtype = tscanout_dtypes)
     for metadata in tscanout.itertuples():
       # Filter out tRNAs
       if 'pseudo' in metadata.note or 'trunc' in metadata.note or 'exon' in metadata.isotype or 'NCI' in metadata.note: 
         continue
       if domain == 'euk':
-        if row.phylum == 'Chordata': 
+        if row.phylum == '7711': # Chordata
           valid_notes = ['high confidence set']
         else:
           valid_notes = ["", "high confidence set", "secondary filtered", "tertiary filtered", "Quality set", 
             "unexpected anticodon", "Unexpected anticodon;First-pass quality filtered", "Isotype mismatch;First-pass quality filtered", 
             "First-pass quality filtered", "Second-pass quality filtered", "Isotype mismatch;Isotype mismatch;First-pass quality filtered"]
         if metadata.note not in valid_notes: continue
-        if row.kingdom == 'Fungi':
+        if row.kingdom == '4751': 
           if metadata.score < 25: continue
         else:
           if metadata.score < 50: continue
@@ -317,7 +333,7 @@ def bounds_to_cols(cols, start, end):
 
 def get_position_order(position):
   '''Helper function for returning a value for sorting position-based columns, especially with variable insertions'''
-  metadata_cols = ['isotype', 'anticodon', 'score', 'primary', 'best_model', 'isoscore', 'isoscore_ac', 'dbname', 'assembly', 'varietas', 'species', 'genus', 'family', 'order', 'subclass', 'class', 'subphylum', 'phylum', 'subkingdom', 'kingdom', 'domain', 'taxid', 'GCcontent', 'insertions', 'deletions', 'D-loop', 'AC-loop', 'TPC-loop', 'V-arm', 'intron_length']
+  metadata_cols = ['isotype', 'anticodon', 'score', 'primary', 'best_model', 'isoscore', 'isoscore_ac', 'dbname', 'domain', 'kingdom', 'subkingdom', 'phylum', 'subphylum', 'class', 'subclass', 'order', 'family', 'genus', 'species', 'assembly', 'GCcontent', 'insertions', 'deletions', 'D-loop', 'AC-loop', 'TPC-loop', 'V-arm', 'intron_length']
   if position in metadata_cols:
     return metadata_cols.index(position) - 50
   if position == "20a": return 20.1

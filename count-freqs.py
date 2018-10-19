@@ -23,20 +23,18 @@ def main():
     'isoscore': float,
     'isoscore_ac': float,
     'dbname': str,
-    'assembly': str,
-    'varietas': str,
-    'species': str,
-    'genus': str,
-    'family': str,
-    'order': str,
-    'subclass': str,
-    'class': str,
-    'subphylum': str,
-    'phylum': str,
-    'subkingdom': str,
-    'kingdom': str,
     'domain': str,
-    'taxid': str,
+    'kingdom': str,
+    'subkingdom': str,
+    'phylum': str,
+    'subphylum': str,
+    'class': str,
+    'subclass': str,
+    'order': str,
+    'family': str,
+    'genus': str,
+    'species': str,
+    'assembly': str,
     'GCcontent': float,
     'insertions': int,
     'deletions': int,
@@ -63,17 +61,16 @@ def main():
     else: message('done\n')
   else:
     freqs = pd.DataFrame()
-  for name, rank, taxid in taxonomy.itertuples(index = False):
+  for name, rank, taxid in taxonomy[['name', 'rank', 'taxid']].itertuples(index = False):
     if rank == 'assembly': continue
     try:
       message('\tCounting base frequencies for {} {}...'.format(rank, name))
-      if saved and 'taxid' in freqs.columns and 'rank' in freqs.columns and not freqs[(freqs['rank'] == rank) & (freqs['taxid'] == taxid)].empty:
+      if saved and 'taxid' in freqs.columns and not freqs[freqs['taxid'] == taxid].empty:
         message('using saved data from previous run\n')
         continue
-      current_clade_trnas = trnas[trnas[rank] == name]
+      current_clade_trnas = trnas[trnas[rank] == taxid]
       current_clade_freqs = count_freqs_isotypes(current_clade_trnas)
       current_clade_freqs['taxid'] = taxid
-      current_clade_freqs['rank'] = rank
       freqs = freqs.append(current_clade_freqs, sort = True)
       message('done\n')
     except Exception as e:
@@ -86,7 +83,7 @@ def main():
   message('Done\n')
   
   message('Exporting results to {}...'.format(output_file))
-  colorder = ['taxid', 'rank', 'isotype', 'position', 'total'] + features
+  colorder = ['taxid', 'isotype', 'position', 'total'] + features
   freqs = freqs.reindex(columns = colorder)
   freqs.to_csv(path_or_buf = output_file, sep = '\t', index = False)
   message('done\n')

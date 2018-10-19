@@ -24,20 +24,18 @@ def main():
     'isoscore': float,
     'isoscore_ac': float,
     'dbname': str,
-    'assembly': str,
-    'varietas': str,
-    'species': str,
-    'genus': str,
-    'family': str,
-    'order': str,
-    'subclass': str,
-    'class': str,
-    'subphylum': str,
-    'phylum': str,
-    'subkingdom': str,
-    'kingdom': str,
     'domain': str,
-    'taxid': str,
+    'kingdom': str,
+    'subkingdom': str,
+    'phylum': str,
+    'subphylum': str,
+    'class': str,
+    'subclass': str,
+    'order': str,
+    'family': str,
+    'genus': str,
+    'species': str,
+    'assembly': str,
     'GCcontent': float,
     'insertions': int,
     'deletions': int,
@@ -64,17 +62,16 @@ def main():
     else: message('done\n')
   else:
     consensus = pd.DataFrame()
-  for name, rank, taxid in taxonomy.itertuples(index = False):
+  for name, rank, taxid in taxonomy[['name', 'rank', 'taxid']].itertuples(index = False):
     if rank == 'assembly': continue
     try:
       message('\tResolving consensus for {} ({})...'.format(name, rank))
-      if saved and 'taxid' in consensus.columns and 'rank' in consensus.columns and not consensus[(consensus['rank'] == rank) & (consensus['taxid'] == taxid)].empty:
+      if saved and 'taxid' in consensus.columns and not consensus[(consensus['taxid'] == taxid)].empty:
         message('using saved data from previous run\n')
         continue
-      current_clade_trnas = trnas[trnas[rank] == name]
+      current_clade_trnas = trnas[trnas[rank] == taxid]
       current_clade_consensus = resolve_consensus_isotypes(current_clade_trnas)
       current_clade_consensus['taxid'] = taxid
-      current_clade_consensus['rank'] = rank
       consensus = consensus.append(current_clade_consensus, sort = True)
       message('done\n')
     except Exception as e:
@@ -86,7 +83,7 @@ def main():
   message('Done\n')
   
   message('Exporting results to {}...'.format(output_file))
-  consensus = consensus.set_index(['taxid', 'rank', 'isotype', 'position']).unstack('position')
+  consensus = consensus.set_index(['taxid', 'isotype', 'position']).unstack('position')
   consensus.columns = consensus.columns.get_level_values(1)
   # Make sure all positions are included even if no consensus is found
   consensus = consensus.append(pd.DataFrame(columns = list(positions.values())), sort = True).fillna('')
