@@ -42,9 +42,6 @@ df = data.frame(name = character(), rank = character(), taxid = character(), dom
 df = bind_rows(df, taxonomy %>% replace(., is.na(.), '') %>% unique)
 taxonomy = df %>% replace(., is.na(.), '')
 
-write.table(taxonomy, file = 'taxonomy.tsv', quote = FALSE, sep = '\t', row.names = FALSE)
-
-
 # add classifications back to original genome table
 genome_table = genome_table %>% left_join(taxonomy %>% filter(assembly != ''), by = 'taxid') %>%
   select(dbname, taxid, name, domain, kingdom, subkingdom, phylum, subphylum, class, subclass, order, family, genus, species, assembly)
@@ -80,3 +77,12 @@ ncbi_refs = read.delim('/projects/lowelab/db/ncbi/genomes/ASSEMBLY_REPORTS/assem
 genome_table = genome_table %>% filter(taxid %in% ncbi_refs$V6 | taxid %in% ncbi_refs$V7 | taxid %in% approved_taxids)
 
 write.table(genome_table, file = 'genomes.tsv', quote = FALSE, sep = '\t', row.names = FALSE)
+
+# Re-filter full taxonomy table based on presence in genomes table
+filtered_taxids = genome_table %>% select(-dbname, -taxid, -name) %>% 
+  gather(rank, taxid) %>%
+  filter(taxid != '') %>%
+  select(taxid) %>% unique %>% unlist %>% unname
+taxonomy = taxonomy %>% filter(taxid %in% filtered_taxids)
+
+write.table(taxonomy, file = 'taxonomy.tsv', quote = FALSE, sep = '\t', row.names = FALSE)
