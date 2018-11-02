@@ -45,7 +45,7 @@ def main():
     'tpcloop': int,
     'varm': int
   })
-  trnas = trnas[trnas.primary]
+  trnas = trnas[trnas.isotype.isin(isotypes) & trnas.primary]
   message('done\n')
 
   message('Parsing clades and taxonomic ranks...')
@@ -75,7 +75,7 @@ def main():
       consensus = consensus.append(current_clade_consensus, sort = True)
       message('done\n')
     except Exception as e:
-      consensus.to_pickle('consensus-saved.pkl')
+      if saved: consensus.to_pickle('consensus-saved.pkl')
       raise e
     # save after each record
     if saved:
@@ -97,7 +97,10 @@ def resolve_consensus_isotypes(trnas):
   consensus = resolve_consensus(trnas)
   consensus['isotype'] = 'All'
   for isotype in isotypes:
-    current_isotype_consensus = resolve_consensus(trnas.loc[trnas.isotype == isotype])
+    current_isotype_trnas = trnas.loc[trnas.isotype == isotype]
+    if current_isotype_trnas.shape[0] == 0:
+      continue
+    current_isotype_consensus = resolve_consensus(current_isotype_trnas)
     current_isotype_consensus['isotype'] = isotype
     consensus = consensus.append(current_isotype_consensus, sort = True)
   return(consensus)
@@ -110,21 +113,26 @@ def resolve_consensus(trnas):
     freqs = trnas.loc[:, positions[position]].value_counts(normalize = True)
     candidate_features = get_candidate_features(freqs.keys(), combos)
     for candidate in candidate_features:
-      freq_check = freqs[freqs.index.isin(combos[candidate]) & (freqs >= 0.05)].sum() > 0.9
-      species_check = all(
-        trnas.loc[:, [positions[position], 'species']].groupby(
-          'species', group_keys = False
-        ).apply(
-          lambda subset, position, combo: any(subset.loc[:, position].isin(combo)), 
-          position = positions[position],
-          combo = combos[candidate]
+      freq_check = True
+      species_check = True
+      for isotype in trnas.isotype.unique():
+        current_isotype_trnas = trnas.loc[trnas.isotype == isotype]
+        current_isotype_freqs = current_isotype_trnas.loc[:, positions[position]].value_counts(normalize = True)
+        freq_check = freq_check & (current_isotype_freqs[current_isotype_freqs.index.isin(combos[candidate]) & (current_isotype_freqs >= 0.05)].sum() > 0.9)
+        species_check = species_check & (all(
+          current_isotype_trnas.loc[:, [positions[position], 'species']].groupby(
+            'species', group_keys = False
+          ).apply(
+            lambda subset, position, combo: any(subset.loc[:, position].isin(combo)), 
+            position = positions[position],
+            combo = combos[candidate]
+          ))
         )
-      )
       if species_check and freq_check:
         current_position['consensus'] = candidate
         break
       # High mismatch rate positions don't need a 5% inclusion rate, 90% threshold, or species check
-      if candidate == 'Mismatched':
+      if candidate == 'Mismatched' and not (species_check and freq_check):
         if freqs[freqs.index.isin(combos[candidate])].sum() > 0.7:
           current_position['consensus'] = 'High mismatch rate'
     if 'consensus' in current_position:
