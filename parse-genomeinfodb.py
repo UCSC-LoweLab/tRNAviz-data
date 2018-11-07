@@ -2,7 +2,7 @@ import re
 
 taxids = []
 taxid = ''
-for line in open('Genome-info-bact'):
+for line in open('Genome-info-arch-new'):
   if line == '\n' and taxid not in taxids and taxid != '':
     print('{}\t{}\t{}'.format(dirname, dbname, taxid))
     taxids.append(taxid)

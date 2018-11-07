@@ -7,6 +7,7 @@ Data processing pipeline for tRNAviz
 0. Prerequisites
 	- Python 3: pandas, Biopython
 	- R: plyr, dplyr, tidyr, ggplot2, Biostrings, RColorBrewer
+	- A list of taxids. If you need to, run `parse-genomeinfodb.py` to get this list.
 
 1. Run tRNAscan-SE on all genomes.
 	- We need `.out`, `.iso`, and `.ss` files, and to run with detailed output. 
