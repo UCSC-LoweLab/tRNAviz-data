@@ -112,7 +112,7 @@ def resolve_consensus(trnas):
 
   for position in positions:
     current_position = {'position': positions[position]}
-    freqs = trnas.loc[:, positions[position]].value_counts(normalize = True)
+    freqs = trnas.loc[:, positions[position]].where(lambda x: x.isin(features)).value_counts(normalize = True)
     candidate_features = get_candidate_features(freqs.keys(), combos)
 
     # Find the first candidate feature that passes all checks and add to dataframe
