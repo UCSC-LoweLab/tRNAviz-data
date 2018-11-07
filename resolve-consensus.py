@@ -83,7 +83,7 @@ def main():
   message('Done\n')
   
   message('Exporting results to {}...'.format(output_file))
-  consensus = consensus.set_index(['taxid', 'isotype', 'position']).unstack('position')
+  consensus = consensus.set_index(['taxid', 'isotype', 'position', 'type']).unstack('position')
   consensus.columns = consensus.columns.get_level_values(1)
   # Make sure all positions are included even if no consensus is found
   consensus = consensus.append(pd.DataFrame(columns = list(positions.values())), sort = True).fillna('')
@@ -96,6 +96,7 @@ def resolve_consensus_isotypes(trnas):
   '''Resolve consensus features across all isotypes given a set of tRNAs'''
   consensus = resolve_consensus(trnas)
   consensus['isotype'] = 'All'
+
   for isotype in isotypes:
     current_isotype_trnas = trnas.loc[trnas.isotype == isotype]
     if current_isotype_trnas.shape[0] == 0:
@@ -108,14 +109,19 @@ def resolve_consensus_isotypes(trnas):
 def resolve_consensus(trnas):
   '''Resolve consensus features across positions given a set of tRNAs'''
   consensus = [] # to be converted into a pandas dataframe later
+
   for position in positions:
     current_position = {'position': positions[position]}
     freqs = trnas.loc[:, positions[position]].value_counts(normalize = True)
     candidate_features = get_candidate_features(freqs.keys(), combos)
+
+    # Find the first candidate feature that passes all checks and add to dataframe
     for candidate in candidate_features:
-      freq_check = True
+      freq_check = freqs[freqs.index.isin(combos[candidate]) & (freqs >= 0.05)].sum() > 0.9
+      if not freq_check:
+        continue
       species_check = True
-      for isotype in trnas.isotype.unique():
+      for isotype in trnas.isotype.where(trnas.isotype.isin(isotypes)).unique():
         current_isotype_trnas = trnas.loc[trnas.isotype == isotype]
         current_isotype_freqs = current_isotype_trnas.loc[:, positions[position]].value_counts(normalize = True)
         freq_check = freq_check & (current_isotype_freqs[current_isotype_freqs.index.isin(combos[candidate]) & (current_isotype_freqs >= 0.05)].sum() > 0.9)
@@ -129,14 +135,28 @@ def resolve_consensus(trnas):
           ))
         )
       if species_check and freq_check:
-        current_position['consensus'] = candidate
+        current_position['feature'] = candidate
+        current_position['type'] = 'Consensus'
+        consensus.append(current_position.copy())
+        break
+
+    # Find the first high frequency feature for "near consensus" features
+    for candidate in candidate_features:
+      freq_check = freqs[freqs.index.isin(combos[candidate]) & (freqs >= 0.05)].sum() > 0.9
+      if freq_check:
+        # Add a new row for near-consensus unless it's the same as the consensus feature
+        if 'feature' in current_position and current_position['feature'] == candidate:
+          break
+        current_position['feature'] = candidate
+        current_position['type'] = 'Near-consensus'
+        consensus.append(current_position)
         break
       # High mismatch rate positions don't need a 5% inclusion rate, 90% threshold, or species check
-      if candidate == 'Mismatched' and not (species_check and freq_check):
+      elif candidate == 'Mismatched':
         if freqs[freqs.index.isin(combos[candidate])].sum() > 0.7:
-          current_position['consensus'] = 'High mismatch rate'
-    if 'consensus' in current_position:
-      consensus.append(current_position)
+          current_position['feature'] = 'High mismatch rate'
+          current_position['type'] = 'Near-consensus'
+
   return pd.DataFrame(consensus)
 
 def get_candidate_features(features, combos):
