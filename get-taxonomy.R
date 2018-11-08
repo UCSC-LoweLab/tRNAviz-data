@@ -66,11 +66,52 @@ genome_table = genome_table %>%
 # in bacteria, 1059 species are represented, but we only have 1016 assemblies that actually are the representative one, with 89 assemblies orphaned (these will be treated as if they didn't have representative species)
 # this discrepancy is because some assemblies for the same species are also considered "representative" (NCBI does this by strain, not species)
 
-# Unfortuantely, this filters out some species. Here's a list of them:
-# assembly  species  name
-# 559292  4932  Saccharomyces cerevisiae S288c
+# Unfortuantely, this filters out some species. Here we add them back in. It's just yeast plus 20 Thaumarcheaota manually entered from RefSeq.
+# species assembly name
+# 4932  559292  Saccharomyces cerevisiae S288c
+# 1088740  1001994  Nitrosarchaeum koreense MY1 (archaea)
+# 1007084   859192  Candidatus Nitrosoarchaeum limnia BG20 (archaea)
+# 1170320   859350  Candidatus Nitrosopumilus salaria BD31 (archaea)
+# 1027373  1027373  Nitrosopumilus sp. AR (archaea)
+# 1027374  1027374  Nitrosopumilus sp. SJ (archaea)
+# 1353246  1353246  Candidatus Nitrosotenuis chungbukensis (archaea)
+# 1034015   926571  Nitrososphaera viennensis EN76 (archaea)
+# 1407055  1407055  Thaumarchaeota archaeon N4 (archaea)
+# 1410606  1410606  Candidatus Nitrosopelagicus brevis (archaea)
+# 1776294  1776294  Nitrosopumilus sp. Nsub (archaea)
+# 1898749  1898749  Candidatus Nitrosomarinus catalina (archaea)
+# 1846278  1846278  Candidatus Nitrosotenuis aquarius (archaea)
+# 2045011  2045011  Candidatus Nitrosocaldus islandicus (archaea)
+# 1410606  1410606  Candidatus Nitrosopelagicus brevis (archaea)
+# 718286   718286 Candidatus Nitrosopumilus sp. NM25 (archaea)
+# 1465461  1465461  Thaumarchaeota archaeon SCGC AC-337_F14 (archaea)
+# 1499975  1499975  Nitrosotalea sp. Nd2 (archaea)
+# 1903277  1903277  Nitrosotalea sp. SbT1 (archaea)
 
-approved_taxids = c('559292')
+# we want to keep 3 additional archaeal genomes already in the set of tRNAscan-SE runs:
+# 1229909  1229909  Candidatus Nitrosopumilus sediminis (archaea)
+# 1603555  1603555  Candidatus Nitrosotenuis cloacae (archaea)
+# 1580092  1580092  Candidatus Nitrosopumilus adriaticus (archaea)
+
+# Archaeal-eukaryote tRNA analysis contains these additional species
+# eukaryotes:
+# Dictyostelium discoideum AX4 (cellular slime molds) dicDis1 352472
+# Heterostelium album PN500 (cellular slime molds)  hetAlb1 670386
+# Dictyostelium purpureum (cellular slime molds)  dicPur1 5786
+# Cavenderia fasciculata (cellular slime molds) cavFas1 261658
+# Entamoeba histolytica HM-1:IMSS (eukaryotes)  entHis1 294381
+# Entamoeba dispar SAW760 (eukaryotes)  entDis1 370354
+# Entamoeba nuttalli P19 (eukaryotes) entNut1 1076696
+# Acanthamoeba castellanii str. Neff (eukaryotes) acaCas1 1257118
+# Entamoeba invadens IP1 (eukaryotes) entInv1 370355
+# Acytostelium subglobosum LB1 (cellular slime molds) acySub1 1410327
+# lokiarchaea:
+# Lokiarchaeum sp. GC14_75 (archaea)  lokiSp_GC14_75  1538547
+# Candidatus Lokiarchaeota archaeon CR_4 (archaea)  candLoki_CR_4 1849166
+# Candidatus Lokiarchaeota archaeon (archaea) candLoki_B53_G9 2053489
+
+approved_taxids = c('559292', '1001994', '859192', '859350', '1229909', '1027373', '1027374', '1353246', '926571', '1407055', '1410606', '1603555', '1580092', '1776294', '1898749', '1846278', '2045011', '1410606', '718286', '1465461', '1499975', '1903277')
+approved_taxids = c(approved_taxids, '352472', '670386', '5786', '261658', '294381', '370354', '1076696', '1257118', '370355', '1410327', '1538547', '1849166', '2053489')
 
 ncbi_refs = read.delim('/projects/lowelab/db/ncbi/genomes/ASSEMBLY_REPORTS/assembly_summary_genbank.txt', stringsAsFactors = FALSE, sep = '\t', comment.char = '#', header = FALSE) %>% 
   filter(V5 %in% c('representative genome', 'reference genome'))
