@@ -2,6 +2,7 @@
 import sys, os
 message = lambda s: print(s, file = sys.stderr, end = '', flush = True)
 message('Loading packages...')
+import numpy
 import pandas as pd
 import argparse
 import subprocess
@@ -127,7 +128,7 @@ def process_tscan_output(genomes_df):
           tscanout = pd.read_table(row.out_file, sep = "\s+", skiprows = 3, na_filter = False, header = None, names = tscanout_cols, dtype = tscanout_dtypes)
     for metadata in tscanout.itertuples():
       # Filter out tRNAs
-      if 'pseudo' in metadata.note or 'trunc' in metadata.note or 'exon' in metadata.isotype or 'NCI' in metadata.note: 
+      if 'pseudo' in metadata.note or 'trunc' in metadata.note or metadata.score < 25:
         continue
       if domain == 'euk':
         if row.phylum == '7711': # Chordata
@@ -137,18 +138,44 @@ def process_tscan_output(genomes_df):
             "unexpected anticodon", "Unexpected anticodon;First-pass quality filtered", "Isotype mismatch;First-pass quality filtered", 
             "First-pass quality filtered", "Second-pass quality filtered", "Isotype mismatch;Isotype mismatch;First-pass quality filtered"]
         if metadata.note not in valid_notes: continue
-        if row.kingdom == '4751': 
-          if metadata.score < 25: continue
-        else:
-          if metadata.score < 50: continue
+        if row.kingdom != '4751' and metadata.score < 50: continue
 
       # Set isotype
       isotype = metadata.isotype.strip()
+      if 'exon' in metadata.isotype:
+        isotype, exon = isotype.split('-')
+        # don't double count multiple exon tRNAs
+        if exon != 'exon1':
+          continue
       if isotype == 'Met':
         if metadata.best_model.strip() in ['iMet', 'fMet', 'Ile2']: isotype = metadata.best_model.strip()
 
       # Save tRNAs
-      intron_length = abs(int(metadata.intron_start) - int(metadata.intron_end))
+      # Track canonical intron length separately
+      if 'NCI' in metadata.note:
+        # Handle multiple introns. Need to figure out which one is the canonical intron, then calculate length. The intron closest to index 39 of the tRNA is listed as the canonical intron.
+        # Canonical introns are located after 37 (index 38), and most tRNAs contain at least 1 extra base in the D-loop -> index 39
+        if 'CI' in metadata.note.split(','):
+          start, end = metadata.start, metadata.end
+          intron_starts = [int(s) for s in metadata.intron_start.split(',')]
+          intron_ends = [int(s) for s in metadata.intron_end.split(',')]
+          pos_starts = []
+          if start < end:
+            pos_starts.append(intron_starts[0] - start)
+            pos_starts.append(intron_starts[1] - (intron_ends[0] - intron_starts[0]) - start)
+            if len(intron_starts) > 2:
+              pos_starts.append(intron_starts[1] - (intron_ends[0] - intron_starts[0]) - (intron_ends[1] - intron_starts[1]) - start)
+            canonical_intron_index = numpy.argmin([abs(s - 39) for s in pos_starts])
+            intron_length = intron_ends[canonical_intron_index] - intron_starts[canonical_intron_index]
+          elif end < start:
+            pos_starts.append(start - intron_starts[0])
+            pos_starts.append(start - (intron_starts[0] - intron_ends[0]) - intron_starts[1])
+            if len(intron_starts) > 2:
+              pos_starts.append(start - (intron_starts[0] - intron_ends[0]) - (intron_starts[1] - intron_ends[1]) - intron_starts[2])
+            canonical_intron_index = numpy.argmin([abs(s - 39) for s in pos_starts])
+            intron_length = intron_starts[canonical_intron_index] - intron_ends[canonical_intron_index] + 1
+      else:
+        intron_length = abs(int(metadata.intron_start) - int(metadata.intron_end))
       if intron_length > 0: intron_length = intron_length + 1
       intron_lengths.append(intron_length)
       seqname = '{}.trna{}-{}{}'.format(metadata.seqname.strip(), metadata.trna_number, isotype, metadata.ac.strip())
