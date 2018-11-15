@@ -43,7 +43,7 @@ def annotate_positions(ss):
     if ss[position] == '.':
       insert_index += 1
       sprinzl_insert_index += 1
-      sprinzl = '{}i{}'.format(int(re.findall('\d+', sprinzl_positions[sprinzl_index])[0]) - 1, sprinzl_insert_index)
+      sprinzl = '{}i{}'.format(sprinzl_positions[sprinzl_index - 1].split(':')[0], sprinzl_insert_index)
       positions.append(Position(position=str(position + 1), sprinzl=sprinzl, index=len(positions), paired=False))
     else:
       if position < region.lower: # before the next region starts (or if it's the last region), annotate as single bases
