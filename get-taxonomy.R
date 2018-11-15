@@ -93,25 +93,7 @@ genome_table = genome_table %>%
 # 1603555  1603555  Candidatus Nitrosotenuis cloacae (archaea)
 # 1580092  1580092  Candidatus Nitrosopumilus adriaticus (archaea)
 
-# Archaeal-eukaryote tRNA analysis contains these additional species
-# eukaryotes:
-# Dictyostelium discoideum AX4 (cellular slime molds) dicDis1 352472
-# Heterostelium album PN500 (cellular slime molds)  hetAlb1 670386
-# Dictyostelium purpureum (cellular slime molds)  dicPur1 5786
-# Cavenderia fasciculata (cellular slime molds) cavFas1 261658
-# Entamoeba histolytica HM-1:IMSS (eukaryotes)  entHis1 294381
-# Entamoeba dispar SAW760 (eukaryotes)  entDis1 370354
-# Entamoeba nuttalli P19 (eukaryotes) entNut1 1076696
-# Acanthamoeba castellanii str. Neff (eukaryotes) acaCas1 1257118
-# Entamoeba invadens IP1 (eukaryotes) entInv1 370355
-# Acytostelium subglobosum LB1 (cellular slime molds) acySub1 1410327
-# lokiarchaea:
-# Lokiarchaeum sp. GC14_75 (archaea)  lokiSp_GC14_75  1538547
-# Candidatus Lokiarchaeota archaeon CR_4 (archaea)  candLoki_CR_4 1849166
-# Candidatus Lokiarchaeota archaeon (archaea) candLoki_B53_G9 2053489
-
 approved_taxids = c('559292', '1001994', '859192', '859350', '1229909', '1027373', '1027374', '1353246', '926571', '1407055', '1410606', '1603555', '1580092', '1776294', '1898749', '1846278', '2045011', '1410606', '718286', '1465461', '1499975', '1903277')
-approved_taxids = c(approved_taxids, '352472', '670386', '5786', '261658', '294381', '370354', '1076696', '1257118', '370355', '1410327', '1538547', '1849166', '2053489')
 
 ncbi_refs = read.delim('/projects/lowelab/db/ncbi/genomes/ASSEMBLY_REPORTS/assembly_summary_genbank.txt', stringsAsFactors = FALSE, sep = '\t', comment.char = '#', header = FALSE) %>% 
   filter(V5 %in% c('representative genome', 'reference genome'))
