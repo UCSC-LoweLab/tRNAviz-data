@@ -27,7 +27,7 @@ $intron_start = 0;
 $intron_end = 0;
 
 while ($line = <SSFILE>) {
-    if ($line =~ /^(\S+)\s+(\(\d+\-\d+\))\s+Length:\s(\d+)\sbp/) {
+    if ($line =~ /^(\S+)\s+(\((\d+\-\d+,?)+\))\s+Length:\s(\d+)\sbp/) {
 		$SeqName = $1;
 		$bounds = $2;
 		$SeqLen = $3;
