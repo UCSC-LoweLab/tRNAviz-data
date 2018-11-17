@@ -53,7 +53,7 @@ def main():
   message('Exporting results to {}...'.format(output_file))
   trnas = trnas[sorted(list(trnas.columns), key = get_position_order)]
   if not output_insertion_columns:
-    insertion_cols = list(filter(lambda x: bool(re.search('^\d+i', x)), trnas.columns))
+    insertion_cols = list(filter(lambda x: bool(re.search('^V?\d+a?b?i', x)), trnas.columns))
     trnas.drop(columns = insertion_cols, inplace = True)
 
   trnas.to_csv(path_or_buf = output_file, sep = '\t', index_label = 'seqname')
